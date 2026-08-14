@@ -22,6 +22,7 @@ class BuktiPembayaranResource extends Resource
 
     protected static ?string $navigationIcon  = 'heroicon-o-banknotes';
     protected static ?string $navigationLabel = 'Konfirmasi Pembayaran';
+    protected static ?string $navigationGroup = 'Akademik';
     protected static ?string $modelLabel      = 'Bukti Pembayaran';
     protected static ?string $pluralModelLabel = 'Bukti Pembayaran';
     protected static ?int    $navigationSort  = 1;

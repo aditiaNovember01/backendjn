@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin default
+        // Admin default panel Filament
         User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
@@ -22,12 +22,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Pastikan admin yang sudah ada rolenya benar
-        User::where('email', 'admin@gmail.com')->update(['role' => 'admin']);
+        $this->command->info('Admin panel : admin@gmail.com | password: admin123');
 
-        $this->command->info('Admin: admin@gmail.com | password: admin123');
-
-        // Seed data kampus
-        $this->call(KampusSeeder::class);
+        // Semua data kampus + mahasiswa testing
+        $this->call(Mahasiswa2210050Seeder::class);
     }
 }

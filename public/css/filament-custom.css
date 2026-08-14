@@ -1,0 +1,148 @@
+/* ============================================================
+   Jayanusa Admin Panel — Custom Sidebar Styling
+   Clean, professional, white-to-light gradient
+   ============================================================ */
+
+/* ── Sidebar wrapper ─────────────────────────────────────── */
+.fi-sidebar {
+    background: linear-gradient(180deg, #ffffff 0%, #f0f4ff 60%, #e8eeff 100%) !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 2px 0 12px 0 rgba(26, 80, 160, 0.06) !important;
+}
+
+/* ── Brand / Logo area ───────────────────────────────────── */
+.fi-sidebar-header {
+    padding: 20px 16px 16px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: transparent !important;
+}
+
+/* ── Nav group label ─────────────────────────────────────── */
+.fi-sidebar-group-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.2px !important;
+    text-transform: uppercase !important;
+    color: #94a3b8 !important;
+    padding-left: 12px !important;
+    margin-top: 8px !important;
+}
+
+/* ── Nav item base ───────────────────────────────────────── */
+.fi-sidebar-item-button {
+    border-radius: 10px !important;
+    margin: 2px 8px !important;
+    padding: 9px 12px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #475569 !important;
+    transition: all 0.18s ease !important;
+    background: transparent !important;
+}
+
+/* ── Nav item icon ───────────────────────────────────────── */
+.fi-sidebar-item-button .fi-sidebar-item-icon {
+    width: 18px !important;
+    height: 18px !important;
+    color: #94a3b8 !important;
+    transition: color 0.18s ease !important;
+}
+
+/* ── Nav item hover ──────────────────────────────────────── */
+.fi-sidebar-item-button:hover {
+    background: rgba(26, 80, 160, 0.07) !important;
+    color: #1A50A0 !important;
+}
+
+.fi-sidebar-item-button:hover .fi-sidebar-item-icon {
+    color: #1A50A0 !important;
+}
+
+/* ── Nav item active ─────────────────────────────────────── */
+.fi-sidebar-item-button.fi-active,
+.fi-sidebar-item-button[aria-current="page"] {
+    background: linear-gradient(90deg, #1A50A0 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(26, 80, 160, 0.25) !important;
+}
+
+.fi-sidebar-item-button.fi-active .fi-sidebar-item-icon,
+.fi-sidebar-item-button[aria-current="page"] .fi-sidebar-item-icon {
+    color: #ffffff !important;
+}
+
+/* ── Sidebar nav padding ─────────────────────────────────── */
+.fi-sidebar-nav {
+    padding: 8px 0 16px !important;
+}
+
+/* ── Topbar ──────────────────────────────────────────────── */
+.fi-topbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Main content area ───────────────────────────────────── */
+.fi-main {
+    background: #f8fafc !important;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.fi-header {
+    background: transparent !important;
+}
+
+.fi-header-heading {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.3px !important;
+}
+
+/* ── Widgets / Cards ─────────────────────────────────────── */
+.fi-wi-stats-overview-stat {
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    background: #ffffff !important;
+    transition: box-shadow 0.2s ease !important;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    box-shadow: 0 6px 20px rgba(26, 80, 160, 0.10) !important;
+}
+
+.fi-wi-stats-overview-stat-value {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+}
+
+/* ── Tables ──────────────────────────────────────────────── */
+.fi-ta-table {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+.fi-ta-header-cell {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    color: #64748b !important;
+    background: #f8fafc !important;
+}
+
+/* ── Scrollbar sidebar ───────────────────────────────────── */
+.fi-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.fi-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.fi-sidebar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}

@@ -16,6 +16,7 @@ class PengumumanResource extends Resource
 
     protected static ?string $navigationIcon  = 'heroicon-o-megaphone';
     protected static ?string $navigationLabel = 'Pengumuman';
+    protected static ?string $navigationGroup = 'Akademik';
     protected static ?string $modelLabel      = 'Pengumuman';
     protected static ?int    $navigationSort  = 2;
 

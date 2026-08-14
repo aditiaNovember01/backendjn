@@ -13,14 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Login mahasiswa — NoBP + password.
-     * Password default: tanggal lahir format ddmmyyyy (misal 01112002).
-     */
+
     public function login(Request $request): JsonResponse
     {
-        // Terima berbagai nama field: nobp, nim, nidn, noBP, username
-        // Flutter/mobile app mungkin mengirim dengan nama berbeda
+ 
         $nobpValue = $request->nobp
             ?? $request->nim
             ?? $request->nidn
@@ -40,12 +36,12 @@ class AuthController extends Controller
 
         $identifier = trim($request->nobp);
 
-        // Map alias D001 ke DSN001 (sesuai teks Akun Demo di app)
+       
         if (strtoupper($identifier) === 'D001') {
             $identifier = 'DSN001';
         }
 
-        // ── Cek apakah login sebagai DOSEN (dosenid ada di tabel dosen) ──
+       
         $dosen = Dosen::where('dosenid', $identifier)
             ->orWhere('dosennidn', $identifier)
             ->first();

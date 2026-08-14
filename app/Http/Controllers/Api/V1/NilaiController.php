@@ -19,6 +19,7 @@ class NilaiController extends Controller
 
         $krsList = Krs::with([
             'kelas.kurikulum.mataKuliah',
+            'kelas.jadwalList.dosen',
             'semester',
         ])
         ->where('krsmhsnobp', $nobp)
@@ -73,7 +74,7 @@ class NilaiController extends Controller
     {
         $nobp = $request->user()->mhsnobp;
 
-        $krsList = Krs::with(['kelas.kurikulum.mataKuliah', 'semester'])
+        $krsList = Krs::with(['kelas.kurikulum.mataKuliah', 'kelas.jadwalList.dosen', 'semester'])
             ->where('krsmhsnobp', $nobp)
             ->where('krshapus', 0)
             ->whereNotNull('krsnilai')
@@ -111,17 +112,22 @@ class NilaiController extends Controller
 
     private function formatNilaiItem(Krs $krs): array
     {
-        $mk  = $krs->kelas?->kurikulum?->mataKuliah;
-        $sks = $mk?->mtksks ?? 0;
+        $mk            = $krs->kelas?->kurikulum?->mataKuliah;
+        $sks           = $mk?->mtksks ?? 0;
+        $jadwalPertama = $krs->kelas?->jadwalList?->first();
 
         return [
-            'kode_mk'    => $mk?->mtkid,
-            'nama_mk'    => $mk?->mtknama,
-            'sks'        => $sks,
-            'nilai'      => $krs->krsnilai,
-            'bobot'      => $krs->krsbobot,
-            'mutu'       => $sks * ($krs->krsbobot ?? 0),
-            'keterangan' => $krs->ket_nilai,
+            'krs_id'      => $krs->krsid,
+            'kode_kelas'  => $krs->kelas?->kelaskode,
+            'kode_mk'     => $mk?->mtkid,
+            'nama_mk'     => $mk?->mtknama,
+            'sks'         => $sks,
+            'nilai'       => $krs->krsnilai,
+            'bobot'       => $krs->krsbobot,
+            'mutu'        => $sks * ($krs->krsbobot ?? 0),
+            'keterangan'  => $krs->ket_nilai,
+            'dosen'       => $jadwalPertama?->dosen?->nama_lengkap ?? '-',
+            'jumlah_absen'=> $krs->krsjmlabsen,
         ];
     }
 }

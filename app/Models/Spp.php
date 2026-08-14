@@ -48,7 +48,8 @@ class Spp extends Model
     // ── Accessor: status lunas ────────────────────────────────
     public function getStatusLunasAttribute(): string
     {
-        $reg = Registrasi::where('regmhsnobp', $this->sppmhsnobp)
+        $reg = Registrasi::lunas()
+            ->where('regmhsnobp', $this->sppmhsnobp)
             ->where('regsem', $this->sppsem)
             ->first();
         return $reg ? 'Lunas' : 'Belum Lunas';

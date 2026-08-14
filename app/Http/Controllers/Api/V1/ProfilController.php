@@ -21,34 +21,64 @@ class ProfilController extends Controller
             'stat',
         ])->findOrFail($nobp);
 
-        $biayaSetting = SettingBiaya::forMahasiswa($mahasiswa);
+        // Ambil setting biaya lengkap berdasarkan prodi + angkatan + kelas
+        $biaya = SettingBiaya::forMahasiswa($mahasiswa);
 
-        $data = [
-            'no_bp'              => $mahasiswa->mhsnobp,
-            'nik'                => $mahasiswa->mhsnik,
-            'nama'               => $mahasiswa->mhsnama,
-            'email'              => $mahasiswa->mhsemail,
-            'prodi'              => $mahasiswa->prodi?->prodinama,
-            'angkatan'           => $mahasiswa->mhsangkatan,
-            'tahun_masuk'        => $mahasiswa->mhsangkatan,
-            'semester_awal_masuk'=> $mahasiswa->mhssemidmasuk,
-            'tempat_lahir'       => $mahasiswa->mhstmplhr,
-            'tanggal_lahir'      => $mahasiswa->mhstgllahir?->format('d F Y'),
-            'jenis_kelamin'      => $mahasiswa->mhsjkl === 'L' ? 'Laki-Laki' : 'Perempuan',
-            'alamat'             => $mahasiswa->mhsalamat,
-            'telp'               => $mahasiswa->mhstelp,
-            'agama'              => $mahasiswa->agama?->agamanama,
-            'nama_ayah'          => $mahasiswa->mhsortu,
-            'nama_ibu'           => $mahasiswa->mhsibu,
-            'jalur'              => $mahasiswa->jalur?->jalurnama,
-            'kelas_biaya'        => $this->kelasBiayaLabel($mahasiswa->mhskel),
-            'biaya_kuliah'       => $biayaSetting?->biaya,
-            'status'             => $mahasiswa->stat?->statnama,
-        ];
+        // Hitung tahun ke berapa untuk biaya pembangunan
+        $tahunKe    = $mahasiswa->getTahunKe();
+        $pembangunan = $biaya?->getPembangunanByTahun($tahunKe) ?? 0;
+
+        // Dosen PA dari jadwal KRS semester aktif
+        $dosenPA = $mahasiswa->getDosenPA();
 
         return response()->json([
             'success' => true,
-            'data'    => $data,
+            'data'    => [
+                // Identitas
+                'no_bp'               => $mahasiswa->mhsnobp,
+                'nik'                 => $mahasiswa->mhsnik,
+                'nama'                => $mahasiswa->mhsnama,
+                'email'               => $mahasiswa->mhsemail,
+
+                // Akademik
+                'prodi'               => $mahasiswa->prodi?->prodinama,
+                'angkatan'            => $mahasiswa->mhsangkatan,
+                'tahun_kurikulum'     => $mahasiswa->mhstahunkur,
+                'semester_awal_masuk' => $mahasiswa->mhssemidmasuk,
+                'tahun_ke'            => $tahunKe,
+                'dosen_pa'            => $dosenPA?->nama_lengkap,
+                'status'              => $mahasiswa->stat?->statnama,
+
+                // Pribadi
+                'tempat_lahir'        => $mahasiswa->mhstmplhr,
+                'tanggal_lahir'       => $mahasiswa->mhstgllahir?->format('d F Y'),
+                'jenis_kelamin'       => $mahasiswa->mhsjkl === 'L' ? 'Laki-Laki' : 'Perempuan',
+                'alamat'              => $mahasiswa->mhsalamat,
+                'kelurahan'           => $mahasiswa->mhskelurahan,
+                'kecamatan'           => $mahasiswa->mhskecamatan,
+                'telp'                => $mahasiswa->mhstelp,
+                'agama'               => $mahasiswa->agama?->agamanama,
+                'asal_sekolah'        => $mahasiswa->mhsasalsekolah,
+
+                // Orang tua
+                'nama_ayah'           => $mahasiswa->mhsortu,
+                'nama_ibu'            => $mahasiswa->mhsibu,
+
+                // Jalur & kelas
+                'jalur'               => $mahasiswa->jalur?->jalurnama,
+                'kelas_biaya'         => $this->kelasBiayaLabel($mahasiswa->mhskel),
+                'kelas_kode'          => $mahasiswa->mhskel,
+
+                // Biaya kuliah
+                'biaya'               => [
+                    'spp_penuh'        => $biaya?->biaya,
+                    'cicilan_1'        => $biaya?->biaya1,
+                    'cicilan_2'        => $biaya?->biaya2,
+                    'pembangunan'      => $pembangunan > 0 ? $pembangunan : null,
+                    'orientasi'        => $biaya?->orientasi,
+                    'tahun_ke'         => $tahunKe,
+                ],
+            ],
         ]);
     }
 

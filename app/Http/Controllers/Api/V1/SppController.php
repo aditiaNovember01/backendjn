@@ -20,14 +20,16 @@ class SppController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $nobp = $request->user()->mhsnobp;
+        $nobp      = $request->user()->mhsnobp;
+        $mahasiswa = \App\Models\Mahasiswa::find($nobp);
+        $biaya     = $mahasiswa ? \App\Models\SettingBiaya::forMahasiswa($mahasiswa) : null;
 
         $sppList = Spp::with('semester')
             ->where('sppmhsnobp', $nobp)
             ->orderByDesc('sppsem')
             ->get();
 
-        $data = $sppList->map(fn($spp) => $this->formatSpp($spp, $nobp));
+        $data = $sppList->map(fn($spp) => $this->formatSpp($spp, $nobp, $biaya));
 
         return response()->json([
             'success' => true,
@@ -40,8 +42,10 @@ class SppController extends Controller
      */
     public function aktif(Request $request): JsonResponse
     {
-        $nobp  = $request->user()->mhsnobp;
-        $semId = Setting::semesterAktif();
+        $nobp      = $request->user()->mhsnobp;
+        $semId     = Setting::semesterAktif();
+        $mahasiswa = \App\Models\Mahasiswa::find($nobp);
+        $biaya     = $mahasiswa ? \App\Models\SettingBiaya::forMahasiswa($mahasiswa) : null;
 
         $spp = Spp::with('semester')
             ->where('sppmhsnobp', $nobp)
@@ -57,7 +61,7 @@ class SppController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $this->formatSpp($spp, $nobp),
+            'data'    => $this->formatSpp($spp, $nobp, $biaya),
         ]);
     }
 
@@ -87,8 +91,8 @@ class SppController extends Controller
             ], 404);
         }
 
-        // Cek sudah lunas (ada registrasi)
-        $registrasi = Registrasi::where('regmhsnobp', $nobp)->where('regsem', $semId)->first();
+        // Cek sudah lunas (ada registrasi sungguhan — bukan AUTO)
+        $registrasi = Registrasi::lunas()->where('regmhsnobp', $nobp)->where('regsem', $semId)->first();
         if ($registrasi) {
             return response()->json([
                 'success' => false,
@@ -96,7 +100,7 @@ class SppController extends Controller
             ], 422);
         }
 
-        // Ambil semua bukti yang sudah dikonfirmasi untuk semester ini
+        
         $buktiDikonfirmasi = BuktiPembayaran::where('mhsnobp', $nobp)
             ->where('sppsem', $semId)
             ->where('status', 'dikonfirmasi')
@@ -163,7 +167,8 @@ class SppController extends Controller
             ->latest()
             ->first();
 
-        $registrasi = Registrasi::where('regmhsnobp', $nobp)
+        $registrasi = Registrasi::lunas()
+            ->where('regmhsnobp', $nobp)
             ->where('regsem', $semId)
             ->first();
 
@@ -205,9 +210,11 @@ class SppController extends Controller
     }
 
     // ── Helper ────────────────────────────────────────────────
-    private function formatSpp(Spp $spp, string $nobp): array
+    private function formatSpp(Spp $spp, string $nobp, ?\App\Models\SettingBiaya $biaya = null): array
     {
-        $registrasi = Registrasi::where('regmhsnobp', $nobp)
+        // Hanya registrasi sungguhan (bukan AUTO) yang dihitung lunas
+        $registrasi = Registrasi::lunas()
+            ->where('regmhsnobp', $nobp)
             ->where('regsem', $spp->sppsem)
             ->first();
 
@@ -220,17 +227,12 @@ class SppController extends Controller
         $totalDikonfirmasi = $buktiDikonfirmasi->sum('jumlah_bayar');
         $tipesDikonfirmasi = $buktiDikonfirmasi->pluck('tipe_bayar')->toArray();
 
-        // Hitung status cicilan:
-        // - lunas     : ada registrasi (admin sudah confirm semua)
-        // - cicilan1  : cicilan1 dikonfirmasi tapi cicilan2 belum
-        // - pending   : ada upload pending (menunggu konfirmasi)
-        // - belum     : belum ada pembayaran sama sekali
+        // Status cicilan
         if ($registrasi) {
             $statusCicilan = 'lunas';
         } elseif (in_array('cicilan1', $tipesDikonfirmasi) || $buktiDikonfirmasi->count() > 0) {
-            $statusCicilan = 'cicilan1'; // Cicilan 1 sudah dikonfirmasi, menunggu cicilan 2 (pelunasan)
+            $statusCicilan = 'cicilan1';
         } else {
-            // Cek apakah ada yang masih pending
             $adaPending = BuktiPembayaran::where('mhsnobp', $nobp)
                 ->where('sppsem', $spp->sppsem)
                 ->where('status', 'pending')
@@ -238,7 +240,6 @@ class SppController extends Controller
             $statusCicilan = $adaPending ? 'pending' : 'belum';
         }
 
-        // Bukti upload terakhir (untuk info di card)
         $buktiTerakhir = BuktiPembayaran::where('mhsnobp', $nobp)
             ->where('sppsem', $spp->sppsem)
             ->latest()
@@ -255,8 +256,14 @@ class SppController extends Controller
             'sem_id'             => $spp->sppsem,
             'semester'           => $spp->semester?->semnama ?? '-',
             'tagihan'            => $spp->spptagihan,
+            // Info cicilan dari settingbiaya
+            'cicilan_info'       => $biaya ? [
+                'biaya_penuh' => $biaya->biaya,
+                'cicilan_1'   => $biaya->biaya1,
+                'cicilan_2'   => $biaya->biaya2,
+            ] : null,
             'status_lunas'       => $registrasi ? 'Lunas' : 'Belum Lunas',
-            'status_cicilan'     => $statusCicilan,  // 'lunas' | 'cicilan1' | 'pending' | 'belum'
+            'status_cicilan'     => $statusCicilan,
             'tanggal_bayar'      => $tanggalBayar,
             'no_bukti'           => $noBukti,
             'jumlah_bayar'       => $jumlahBayar,

@@ -39,29 +39,36 @@ class KrsController extends Controller
 
         $items = $krsList->map(fn($krs) => $this->formatKrsItem($krs));
 
-        // Cek apakah sudah ada pembayaran yang dikonfirmasi (cicilan 1 pun sudah cukup)
+        // Cek pembayaran — cicilan 1 dikonfirmasi sudah cukup untuk isi KRS
         $sudahBayar = BuktiPembayaran::where('mhsnobp', $nobp)
             ->where('sppsem', $semId)
             ->where('status', 'dikonfirmasi')
             ->exists();
 
-        // Fallback: cek registrasi penuh (lunas) jika tidak ada bukti pembayaran
+        // Fallback: cek registrasi lunas sungguhan (bukan AUTO)
         if (!$sudahBayar) {
-            $sudahBayar = Registrasi::where('regmhsnobp', $nobp)
+            $sudahBayar = Registrasi::lunas()
+                ->where('regmhsnobp', $nobp)
                 ->where('regsem', $semId)
                 ->exists();
         }
 
-        $bisaIsiKrs = $sudahBayar;
+        // Dosen PA dari jadwal KRS
+        $dosenPA = null;
+        if ($krsList->isNotEmpty()) {
+            $dosenPA = $krsList->first()?->kelas?->jadwalList?->first()?->dosen?->nama_lengkap;
+        }
 
         return response()->json([
             'success' => true,
             'data'    => [
                 'semester'         => $krsList->first()?->semester?->semnama ?? '-',
+                'sem_id'           => (int) $semId,
                 'total_sks'        => $totalSks,
                 'max_sks'          => 24,
-                'bisa_isi_krs'     => $bisaIsiKrs,
-                'pesan_pembayaran' => $bisaIsiKrs ? null : 'Anda belum melakukan pembayaran SPP untuk semester ini. Silakan upload bukti pembayaran terlebih dahulu sebelum mengisi KRS.',
+                'dosen_pa'         => $dosenPA,
+                'bisa_isi_krs'     => $sudahBayar,
+                'pesan_pembayaran' => $sudahBayar ? null : 'Anda belum melakukan pembayaran SPP untuk semester ini. Silakan upload bukti pembayaran terlebih dahulu.',
                 'items'            => $items,
             ],
         ]);
@@ -143,9 +150,10 @@ class KrsController extends Controller
             ->where('status', 'dikonfirmasi')
             ->exists();
 
-        // Fallback: cek registrasi penuh (lunas)
+        // Fallback: cek registrasi lunas sungguhan (bukan AUTO)
         if (!$sudahBayar) {
-            $sudahBayar = Registrasi::where('regmhsnobp', $nobp)
+            $sudahBayar = Registrasi::lunas()
+                ->where('regmhsnobp', $nobp)
                 ->where('regsem', $semId)
                 ->exists();
         }
@@ -227,22 +235,63 @@ class KrsController extends Controller
     // ── Helper format item ─────────────────────────────────────
     private function formatKrsItem(Krs $krs): array
     {
-        $jadwal = $krs->kelas?->jadwalList?->first();
-        $mk     = $krs->kelas?->kurikulum?->mataKuliah;
+        $mk          = $krs->kelas?->kurikulum?->mataKuliah;
+        $jadwalList  = $krs->kelas?->jadwalList ?? collect();
+
+        // Konversi ID jam ke HH:mm — standar kampus 1 sesi = 50 menit mulai 07:00
+        $jamMap = [
+            1=>'07:00', 2=>'07:50', 3=>'08:40', 4=>'09:30', 5=>'10:20', 6=>'11:10',
+            7=>'13:00', 8=>'13:50', 9=>'14:40', 10=>'15:30', 11=>'16:20', 12=>'17:10',
+            13=>'18:00', 14=>'18:50', 15=>'19:40',
+        ];
+        $jamSelesai = function(?int $id) use ($jamMap): ?string {
+            if (!$id || !isset($jamMap[$id])) return null;
+            [$h, $m] = explode(':', $jamMap[$id]);
+            $total   = intval($h) * 60 + intval($m) + 50;
+            return str_pad(intdiv($total,60),2,'0',STR_PAD_LEFT).':'.str_pad($total%60,2,'0',STR_PAD_LEFT);
+        };
+
+        // Format semua jadwal dengan waktu lengkap
+        $jadwal = $jadwalList->map(function($j) use ($jamMap, $jamSelesai) {
+            $mulai   = $jamMap[$j->jadwaljamidawal]  ?? null;
+            $selesai = $jamSelesai($j->jadwaljamidakhir);
+            return [
+                'hari'        => $j->jadwalhari ?? '-',
+                'jam_mulai'   => $mulai,
+                'jam_selesai' => $selesai,
+                'jam_label'   => $mulai && $selesai ? "$mulai – $selesai" : '-',
+                'ruangan'     => $j->ruang?->runama ?? '-',
+                'dosen'       => $j->dosen?->nama_lengkap ?? '-',
+            ];
+        })->values();
+
+        $j1      = $jadwalList->first();
+        $mulai1  = $jamMap[$j1?->jadwaljamidawal]  ?? null;
+        $selesai1= $jamSelesai($j1?->jadwaljamidakhir);
 
         return [
             'krs_id'       => $krs->krsid,
-            'kode_kelas'   => $krs->kelas?->kelaskode . ' (' . $krs->kelas?->kelaslabel . ')',
+            'kelas_id'     => $krs->krskelasid,
+            'kode_kelas'   => $krs->kelas?->kelaskode,
+            'label_kelas'  => $krs->kelas?->kelaslabel,
             'kode_mk'      => $mk?->mtkid,
             'nama_mk'      => $mk?->mtknama,
             'sks'          => $mk?->mtksks,
-            'dosen'        => $jadwal?->dosen?->nama_lengkap,
-            'hari'         => $jadwal?->jadwalhari ?? '-',
-            'ruangan'      => $jadwal?->ruang?->runama ?? '-',
+            'semester_mk'  => $krs->kelas?->kurikulum?->kursem,
+            // Jadwal ringkas — siap pakai di React Native
+            'hari'         => $j1?->jadwalhari ?? '-',
+            'jam_mulai'    => $mulai1,
+            'jam_selesai'  => $selesai1,
+            'jam_label'    => $mulai1 && $selesai1 ? "$mulai1 – $selesai1" : '-',
+            'ruangan'      => $j1?->ruang?->runama ?? '-',
+            'dosen'        => $j1?->dosen?->nama_lengkap ?? '-',
+            // Detail semua jadwal
+            'jadwal'       => $jadwal,
             'status_krs'   => $krs->status_krs,
-            'nilai'        => $krs->krsnilai,
+            'nilai'        => $krs->krsnilai ?: null,
             'bobot'        => $krs->krsbobot,
             'keterangan'   => $krs->ket_nilai,
+            'jumlah_absen' => $krs->krsjmlabsen,
         ];
     }
 }

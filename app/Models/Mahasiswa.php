@@ -18,13 +18,15 @@ class Mahasiswa extends Model
         'mhsnobp', 'mhsnama', 'mhsalamat', 'mhsangkatan',
         'mhsprodiid', 'mhsagamaid', 'mhsjalurid', 'mhsstatid',
         'mhstgllhr', 'mhstmplhr', 'mhsjkl', 'mhsortu', 'mhsibu',
-        'mhstelp', 'mhstahunkur', 'mhskel', 'mhssemidmasuk',
-        'mhsnik', 'mhsemail', 'mhstgllahir',
+        'mhstelp', 'mhstahunkur', 'mhskel', 'mhsasalsekolah',
+        'mhssemidmasuk', 'mhsnik', 'mhsnisn', 'mhsumberbiayaid',
+        'mhsemail', 'mhstgllahir', 'mhskelurahan', 'mhskecamatan',
     ];
 
     protected $casts = [
         'mhsangkatan' => 'integer',
         'mhstgllahir' => 'date',
+        'mhstahunkur' => 'integer',
     ];
 
     // ── Relations ──────────────────────────────────────────────
@@ -74,12 +76,36 @@ class Mahasiswa extends Model
         return ucwords(strtolower($this->mhsnama));
     }
 
-    // ── Helper: biaya kuliah dari settingbiaya ─────────────────
-    public function getBiayaKuliah(int $semId): ?float
+    // ── Helper: setting biaya untuk mahasiswa ini ──────────────
+    public function getSettingBiaya(): ?SettingBiaya
     {
-        return SettingBiaya::where('prodi', $this->mhsprodiid)
-            ->where('angkatan', $this->mhsangkatan)
-            ->where('kelas', $this->mhskel)
-            ->value('biaya');
+        return SettingBiaya::forMahasiswa($this);
+    }
+
+    /**
+     * Hitung tahun ke berapa mahasiswa saat ini.
+     * Berdasarkan selisih angkatan dengan tahun akademik berjalan.
+     */
+    public function getTahunKe(): int
+    {
+        $semAktifId  = Setting::semesterAktif();
+        $tahunSemAkt = (int) substr((string) $semAktifId, 0, 4);
+        $tahunKe     = $tahunSemAkt - $this->mhsangkatan + 1;
+        return max(1, min(4, $tahunKe));
+    }
+
+    /**
+     * Ambil dosen PA dari jadwal KRS semester ini.
+     */
+    public function getDosenPA(): ?Dosen
+    {
+        $semId = Setting::semesterAktif();
+        $krs   = $this->krsList()
+            ->where('krssem', $semId)
+            ->where('krshapus', 0)
+            ->with('kelas.jadwalList.dosen')
+            ->first();
+
+        return $krs?->kelas?->jadwalList?->first()?->dosen;
     }
 }

@@ -15,6 +15,7 @@ class MahasiswaResource extends Resource
 
     protected static ?string $navigationIcon  = 'heroicon-o-academic-cap';
     protected static ?string $navigationLabel = 'Data Mahasiswa';
+    protected static ?string $navigationGroup = 'Akademik';
     protected static ?string $modelLabel      = 'Mahasiswa';
     protected static ?int    $navigationSort  = 3;
 

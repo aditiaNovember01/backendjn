@@ -38,16 +38,21 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Hanya user dengan role admin yang bisa akses Filament panel.
+     * Hanya user dengan role admin atau pimpinan yang bisa akses Filament panel.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'pimpinan']);
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isPimpinan(): bool
+    {
+        return $this->role === 'pimpinan';
     }
 
     public function isMahasiswa(): bool
