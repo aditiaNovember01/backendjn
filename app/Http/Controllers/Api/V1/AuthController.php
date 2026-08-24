@@ -46,7 +46,7 @@ class AuthController extends Controller
             ->orWhere('dosennidn', $identifier)
             ->first();
         if ($dosen) {
-            // Cari user dosen berdasarkan dosenid utama
+         
             $user = User::where('dosenid', $dosen->dosenid)
                 ->where('role', 'dosen')
                 ->first();
