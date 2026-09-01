@@ -11,7 +11,7 @@ class FcmToken extends Model
 
     protected $fillable = [
         'nobp',
-        'token',
+        'token',      // varchar(255) — cukup untuk FCM token
         'platform',
         'last_used_at',
     ];

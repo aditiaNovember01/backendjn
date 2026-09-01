@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('fcm_tokens', function (Blueprint $table) {
             $table->id();
-            $table->string('nobp', 10)->index();           // NoBP mahasiswa atau dosenid
-            $table->text('token');                          // FCM device token (panjang ~150+ char)
-            $table->string('platform', 10)->default('android'); // android / ios
-            $table->timestamp('last_used_at')->nullable();  // Terakhir aktif
+            $table->string('nobp', 10)->index();
+            $table->string('token', 255);              // varchar(255) — bisa di-unique
+            $table->string('platform', 10)->default('android');
+            $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
 
-            // Satu kombinasi nobp+token harus unik
+            // Unique per nobp+token (varchar 255 = bisa di-index langsung)
             $table->unique(['nobp', 'token'], 'fcm_tokens_nobp_token_unique');
         });
     }
