@@ -68,15 +68,31 @@ class BuktiPembayaranResource extends Resource
             Forms\Components\Section::make('Bukti Pembayaran')
                 ->schema([
                     Forms\Components\Placeholder::make('preview_bukti')
-                        ->label('Preview Bukti (Compressed)')
+                        ->label('Preview Bukti Pembayaran')
                         ->content(function ($record) {
-                            if (! $record?->file_compressed) {
-                                return new \Illuminate\Support\HtmlString('<p class="text-gray-500 text-sm">Tidak ada gambar.</p>');
+                            if (! $record) {
+                                return new \Illuminate\Support\HtmlString('<p class="text-gray-500 text-sm">Tidak ada data.</p>');
                             }
-                            $url = \Illuminate\Support\Facades\Storage::disk('public')->url($record->file_compressed);
+
+                            // Gunakan accessor file_url yang sudah handle APP_URL dengan benar
+                            $urlCompressed = $record->file_url;
+                            $urlOriginal   = $record->file_original_url;
+
+                            if (! $urlCompressed && ! $urlOriginal) {
+                                return new \Illuminate\Support\HtmlString('<p class="text-gray-500 text-sm">Tidak ada gambar bukti.</p>');
+                            }
+
+                            $urlTampil = $urlCompressed ?? $urlOriginal;
+
                             return new \Illuminate\Support\HtmlString(
-                                '<img src="' . e($url) . '" alt="Bukti Pembayaran"
-                                      style="max-height:300px;max-width:100%;border-radius:8px;border:1px solid #e5e7eb;" />'
+                                '<div style="display:flex;flex-direction:column;gap:8px;">'
+                                . '<img src="' . e($urlTampil) . '" alt="Bukti Pembayaran"
+                                    style="max-height:400px;max-width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;" />'
+                                . '<a href="' . e($urlTampil) . '" target="_blank"
+                                    style="font-size:12px;color:#3b82f6;text-decoration:underline;">
+                                    🔗 Buka gambar di tab baru
+                                </a>'
+                                . '</div>'
                             );
                         }),
                 ]),
@@ -132,6 +148,7 @@ class BuktiPembayaranResource extends Resource
                     ->disk('public')
                     ->height(60)
                     ->width(80)
+                    ->defaultImageUrl(fn() => null)
                     ->extraImgAttributes(['style' => 'object-fit:cover;border-radius:4px;']),
 
                 Tables\Columns\BadgeColumn::make('status')

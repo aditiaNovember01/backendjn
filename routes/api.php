@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\FcmTokenController;
 use App\Http\Controllers\Api\V1\KelasController;
 use App\Http\Controllers\Api\V1\KrsController;
 use App\Http\Controllers\Api\V1\NilaiController;
@@ -55,5 +56,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/pengumuman',      [PengumumanController::class, 'index']);
         Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
         Route::post('/pengumuman',     [PengumumanController::class, 'store']);
+
+        // FCM Token
+        Route::post('/fcm/register',   [FcmTokenController::class, 'register']);
+        Route::delete('/fcm/unregister', [FcmTokenController::class, 'unregister']);
     });
 });

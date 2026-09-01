@@ -42,14 +42,17 @@ class BuktiPembayaran extends Model
     public function getFileUrlAttribute(): ?string
     {
         $path = $this->file_compressed ?? $this->file_path;
-        return $path ? Storage::disk('public')->url($path) : null;
+        if (! $path) return null;
+
+        // Gunakan Storage::url() — bergantung pada APP_URL di .env
+        // Pastikan APP_URL dan FILESYSTEM_DISK=public sudah diset benar di server
+        return Storage::disk('public')->url($path);
     }
 
     public function getFileOriginalUrlAttribute(): ?string
     {
-        return $this->file_path
-            ? Storage::disk('public')->url($this->file_path)
-            : null;
+        if (! $this->file_path) return null;
+        return Storage::disk('public')->url($this->file_path);
     }
 
     // ── Accessor: badge warna status ─────────────────────────

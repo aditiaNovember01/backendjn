@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pengumuman;
+use App\Services\FcmService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PengumumanController extends Controller
 {
+    public function __construct(private FcmService $fcm) {}
+
     /**
      * Daftar pengumuman aktif, terbaru dulu.
      */
@@ -52,6 +55,7 @@ class PengumumanController extends Controller
 
     /**
      * Tambah pengumuman baru (Dosen / Admin).
+     * Otomatis kirim notifikasi FCM ke semua device mahasiswa.
      */
     public function store(Request $request): JsonResponse
     {
@@ -67,6 +71,24 @@ class PengumumanController extends Controller
             'aktif'       => true,
             'user_id'     => $request->user()?->id,
         ]);
+
+        // ── Kirim notifikasi FCM ke semua device mahasiswa ──────────
+        // Gagal FCM tidak membatalkan response — log saja
+        try {
+            $this->fcm->sendToAllMahasiswa(
+                title: '📢 Pengumuman Baru',
+                body:  $pengumuman->judul,
+                data:  [
+                    'type'          => 'pengumuman',
+                    'pengumuman_id' => (string) $pengumuman->id,
+                    'judul'         => $pengumuman->judul,
+                    'screen'        => 'PengumumanDetail',
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('[FCM] Gagal kirim notifikasi pengumuman: ' . $e->getMessage());
+        }
+        // ────────────────────────────────────────────────────────────
 
         return response()->json([
             'success' => true,

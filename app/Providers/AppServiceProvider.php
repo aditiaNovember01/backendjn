@@ -2,21 +2,17 @@
 
 namespace App\Providers;
 
+use App\Services\FcmService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        // FcmService sebagai singleton agar access token di-cache dalam satu request cycle
+        $this->app->singleton(FcmService::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         //
